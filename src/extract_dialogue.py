@@ -226,7 +226,7 @@ if __name__ == "__main__":
             lines = get_talk_flow_lines(parsed_actions, multitext_dict)
             if lines:
                 if not first_print:
-                    print("==========")
+                    print("----")
                 for line in lines:
                     print(line)
                 first_print = False
