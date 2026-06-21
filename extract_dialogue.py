@@ -39,7 +39,9 @@ def parse_json_string(json_string: str) -> list:
     
     return parsed_data
 
-def get_talk_flow_lines(parsed_data: list) -> list:
+def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
+    if multitext_dict is None:
+        multitext_dict = {}
     show_talks = [item for item in parsed_data if item.get("Name") == "ShowTalk"]
     if not show_talks:
         return []
@@ -60,7 +62,7 @@ def get_talk_flow_lines(parsed_data: list) -> list:
             visited.add(seq_idx)
             
             seq = talk_sequence[seq_idx]
-            indent = "    " * indent_level
+            indent = ":" * indent_level
             
             transitions = seq_transitions.get(str(seq_idx), [])
             
@@ -72,8 +74,13 @@ def get_talk_flow_lines(parsed_data: list) -> list:
                 if not item: continue
                 
                 tid_talk = item.get("TidTalk")
+                who_id = item.get("WhoId")
                 if tid_talk:
-                    output_lines.append(f"{indent}{tid_talk}")
+                    character_name = multitext_dict.get(f"Speaker_{who_id}_Name", who_id)
+                    dialogue = multitext_dict.get(tid_talk, tid_talk)
+                    dialogue_line = f"{indent}'''{character_name}:''' {dialogue}"
+                    dialogue_line = dialogue_line.replace("{PlayerName}", "{{Rover}}")
+                    output_lines.append(dialogue_line)
                     
                 if item.get("Options"):
                     options = item.get("Options")
@@ -96,7 +103,8 @@ def get_talk_flow_lines(parsed_data: list) -> list:
                         for opt in options:
                             opt_tid = opt.get("TidTalkOption")
                             if opt_tid:
-                                output_lines.append(f"{indent}{opt_tid}")
+                                translated_opt = multitext_dict.get(opt_tid, opt_tid)
+                                output_lines.append(f"{indent}{translated_opt}")
             
             if has_branching_options:
                 next_seqs = set()
@@ -115,7 +123,8 @@ def get_talk_flow_lines(parsed_data: list) -> list:
                 for opt in options_to_branch:
                     opt_tid = opt.get("TidTalkOption")
                     if opt_tid:
-                        output_lines.append(f"{indent}{opt_tid}")
+                        translated_opt = multitext_dict.get(opt_tid, opt_tid)
+                        output_lines.append(f"{indent}{translated_opt}")
                         
                     branch_seq_idx = None
                     for trans in transitions:
@@ -141,7 +150,7 @@ def get_talk_flow_lines(parsed_data: list) -> list:
                     # Proceed linearly if no transitions are defined
                     traverse(seq_idx + 1, indent_level, stop_seqs)
 
-        traverse(0, 0, set())
+        traverse(0, 1, set())
         
     return output_lines
 
@@ -155,6 +164,13 @@ if __name__ == "__main__":
 
     with open("plothandbookconfig.json", "r", encoding="utf-8") as f:
         plothb_data = json.load(f)
+        
+    try:
+        with open("MultiText.json", "r", encoding="utf-8") as f:
+            multitext_data = json.load(f)
+            multitext_dict = {item.get("Id"): item.get("Content") for item in multitext_data if item.get("Id")}
+    except FileNotFoundError:
+        multitext_dict = {}
         
     quest_data_str = None
     for item in plothb_data:
@@ -196,7 +212,7 @@ if __name__ == "__main__":
         action_string = actions_dict.get(state_key)
         if action_string:
             parsed_actions = parse_json_string(action_string)
-            lines = get_talk_flow_lines(parsed_actions)
+            lines = get_talk_flow_lines(parsed_actions, multitext_dict)
             if lines:
                 if not first_print:
                     print("==========")
