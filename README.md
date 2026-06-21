@@ -1,6 +1,6 @@
 # Wuthering Waves Dialogue Extractor (and Formatter)
 
-This is a program that helps you automatically output the dialogue format of each Wuthering Waves quests. Do note that this may not include a few stuffs like WavesLine chats, some NPC convo (the ones without custom camera movement), as that's missing in the flowstate. But it should do 85%+ of the job.
+This is a program that helps you automatically output the dialogue format of each Wuthering Waves quests. Do note that this may not include a few stuffs like WavesLine chats, dialogues during the regular walking/fighting, some NPC convo (the ones without custom camera movement), as that's missing in the flowstate. But it should do 85%+ of the job.
 
 This is made especially for Wuthering Waves Fandom Wiki, but anyone else are welcomed to use it.
 
