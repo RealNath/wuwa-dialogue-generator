@@ -6,14 +6,22 @@ This is made especially for Wuthering Waves Fandom Wiki, but anyone else are wel
 
 ## How to use
 
-1. Download the following components from the [arikatsu](https://github.com/Arikatsu/WutheringWaves_Data) repo at minimal:
+1. Clone this repo, or download it as a zip.
+    ```bash
+    git clone https://github.com/RealNath/wuwa-dialogue-extractor.git
+    cd src
+    ```
+
+2. Download the following files from the [arikatsu](https://github.com/Arikatsu/WutheringWaves_Data) repo at minimum:
     - `flow.json`
     - `flowstate.json`
     - `MultiText.json`
     - `plothandbookconfig.json`
 
-2. Run this command:
-    ```python
+3. Put them at the same folder as extract_dialogue.py (e.g at `src`).
+
+4. Run this command:
+    ```bash
     python extract_dialogue.py {QuestId}
     ```
     * QuestId can be seen at plothandbookconfig.json
