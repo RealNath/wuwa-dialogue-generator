@@ -78,7 +78,9 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                 if tid_talk:
                     character_name = multitext_dict.get(f"Speaker_{who_id}_Name", who_id)
                     dialogue = multitext_dict.get(tid_talk, tid_talk)
+                    
                     dialogue_line = f"{indent}'''{character_name}:''' {dialogue}"
+                    
                     dialogue_line = dialogue_line.replace("{PlayerName}", "{{Rover}}")
                     output_lines.append(dialogue_line)
                     
@@ -104,7 +106,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                             opt_tid = opt.get("TidTalkOption")
                             if opt_tid:
                                 translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                                output_lines.append(f"{indent}{translated_opt}")
+                                diicon = "{{DIcon}}"
+                                output_lines.append(f"{indent}{diicon} {translated_opt}")
             
             if has_branching_options:
                 next_seqs = set()
@@ -124,7 +127,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     opt_tid = opt.get("TidTalkOption")
                     if opt_tid:
                         translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                        output_lines.append(f"{indent}{translated_opt}")
+                        diicon = "{{DIcon}}"
+                        output_lines.append(f"{indent}{diicon} {translated_opt}")
                         
                     branch_seq_idx = None
                     for trans in transitions:
@@ -165,12 +169,19 @@ if __name__ == "__main__":
     with open("plothandbookconfig.json", "r", encoding="utf-8") as f:
         plothb_data = json.load(f)
         
-    try:
-        with open("MultiText.json", "r", encoding="utf-8") as f:
-            multitext_data = json.load(f)
-            multitext_dict = {item.get("Id"): item.get("Content") for item in multitext_data if item.get("Id")}
-    except FileNotFoundError:
-        multitext_dict = {}
+    multitext_dict = {}
+    for filename in ["MultiText.json", "MultiText_1.json", "MultiText_2.json"]:
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data:
+                    if item.get("Id"):
+                        if filename == "MultiText.json" and item.get("RedirectDbIndex") == 1:
+                            continue
+                        multitext_dict[item.get("Id")] = item.get("Content")
+        except FileNotFoundError:
+            print(f"Please download and put {filename} to current directory")
+            sys.exit(1)
         
     quest_data_str = None
     for item in plothb_data:

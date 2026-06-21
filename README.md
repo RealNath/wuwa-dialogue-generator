@@ -13,10 +13,14 @@ This is made especially for Wuthering Waves Fandom Wiki, but anyone else are wel
     ```
 
 2. Download the following files from the [arikatsu](https://github.com/Arikatsu/WutheringWaves_Data) repo at minimum:
-    - `flow.json`
-    - `flowstate.json`
-    - `MultiText.json`
-    - `plothandbookconfig.json`
+    - `BinData/flow/flow.json`
+    - `BinData/flowState/flowstate.json`
+    - `BinData/PlotHandBook/plothandbookconfig.json`
+    - `Textmaps/{lang}/multi_text/MultiText.json`
+    - `Textmaps/{lang}/multi_text_1sthalf/MultiText.json`
+        * Rename to MultiText_1.json
+    - `Textmaps/{lang}/multi_text_2ndhalf/MultiText.json`
+        * Rename to MultiText_2.json
 
 3. Put them at the same folder as extract_dialogue.py (e.g at `src`).
 
