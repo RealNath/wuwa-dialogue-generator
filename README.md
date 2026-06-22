@@ -12,23 +12,26 @@ This is made especially for Wuthering Waves Fandom Wiki, but anyone else are wel
     cd src
     ```
 
-2. Download the following files from the [arikatsu](https://github.com/Arikatsu/WutheringWaves_Data) repo at minimum:
+2. Download the needed files from the [arikatsu](https://github.com/Arikatsu/WutheringWaves_Data) repo:
+    ```bash
+    python download_json.py {game_version} {language}
+    ```
+    For example: `python download_json.py 3.4 en`  
+    This consists of the following files:
     - `BinData/flow/flow.json`
     - `BinData/flowState/flowstate.json`
     - `BinData/PlotHandBook/plothandbookconfig.json`
     - `Textmaps/{lang}/multi_text/MultiText.json`
     - `Textmaps/{lang}/multi_text_1sthalf/MultiText.json`
-        * Rename to MultiText_1.json
+        * Renamed to MultiText_1.json
     - `Textmaps/{lang}/multi_text_2ndhalf/MultiText.json`
-        * Rename to MultiText_2.json
+        * Renamed to MultiText_2.json
 
-3. Put them at the same folder as extract_dialogue.py (e.g at `src`).
-
-4. Run this command:
+3. Run this command:
     ```bash
     python extract_dialogue.py {QuestId}
     ```
-    * QuestId can be seen at plothandbookconfig.json
+    * `QuestId` can be seen at plothandbookconfig.json
     * The string/actual name of the quest can be seen at `MultiText.json`:
         * Search for `Quest_{QuestId}_QuestName`, see the value of `Content`.
         * Or you can search for the complete quest name, surrounded by quotation marks `"..."`, see the one that has `"Id": "Quest_{QuestId}_QuestName_..."` on the previous line.
