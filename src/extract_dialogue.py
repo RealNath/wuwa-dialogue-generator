@@ -3,9 +3,13 @@ import json
 import re
 from typing import List
 
-def format_dialogue(character_name: str, dialogue: str) -> str:
-    line = f"'''{character_name}:''' {dialogue}"
-    line = line.replace("{PlayerName}", "{{Rover}}")
+def format_dialogue(character_name: str, dialogue: str, prefix: str = "_") -> str:
+    if prefix == "dicon":
+        dicon = "{{DIcon}}"
+        line = f"{dicon} {dialogue}"
+    else:
+        line = f"'''{character_name}:''' {dialogue}"
+        line = line.replace("{PlayerName}", "{{Rover}}")
     
     # Replace {Male=X;Female=Y} with {{MC|m=X|f=Y}}
     line = re.sub(r'\{Male=(.*?);Female=(.*?)\}', r'{{MC|m=\1|f=\2}}', line)
@@ -159,8 +163,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                             opt_tid = opt.get("TidTalkOption")
                             if opt_tid:
                                 translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                                diicon = "{{DIcon}}"
-                                output_lines.append(f"{indent}{diicon} {translated_opt}")
+                                dialogue_line = format_dialogue("_", translated_opt, "dicon")
+                                output_lines.append(f"{indent}{dialogue_line}")
             
             if has_branching_options:
                 next_seqs = set()
@@ -169,8 +173,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     opt_tid = opt.get("TidTalkOption")
                     if opt_tid:
                         translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                        diicon = "{{DIcon}}"
-                        output_lines.append(f"{indent}{diicon} {translated_opt}")
+                        dialogue_line = format_dialogue("_", translated_opt, "dicon")
+                        output_lines.append(f"{indent}{dialogue_line}")
                         
                     if branch_seq_idx is not None:
                         n_seq = get_next_seq_from_branch(branch_seq_idx)
