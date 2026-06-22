@@ -6,8 +6,13 @@ from typing import List
 def format_dialogue(character_name: str, dialogue: str) -> str:
     line = f"'''{character_name}:''' {dialogue}"
     line = line.replace("{PlayerName}", "{{Rover}}")
+    
     # Replace {Male=X;Female=Y} with {{MC|m=X|f=Y}}
     line = re.sub(r'\{Male=(.*?);Female=(.*?)\}', r'{{MC|m=\1|f=\2}}', line)
+
+    # Replace <ano=Y>X</ano> with {{Rubi|X|Y}}
+    line = re.sub(r'<ano=(.*?)>(.*?)</ano>', r'{{Rubi|\2|\1}}', line)
+    
     return line
 
 def get_states_for_id(filepath: str, target_id: str) -> List[str]:
