@@ -246,7 +246,14 @@ if __name__ == "__main__":
     parsed_data = parse_json_string(quest_data_str)
     
     state_keys = []
+    state_key_tips = {}
+    current_tip = ""
+    
     for item in parsed_data:
+        tid_tip = item.get("TidTip", "")
+        if tid_tip:
+            current_tip = tid_tip
+            
         flow = item.get("Flow", {})
         flow_list_name = flow.get("FlowListName", "")
         flow_id = flow.get("FlowId", 0)
@@ -257,6 +264,7 @@ if __name__ == "__main__":
             
         state_key = f"{flow_list_name}_{flow_id}_{state_id}"
         state_keys.append(state_key)
+        state_key_tips[state_key] = current_tip
         
     if not state_keys:
         print(f"No valid state keys found for QuestId {args.quest_id}.")
@@ -269,6 +277,7 @@ if __name__ == "__main__":
         sys.exit(1)
         
     first_print = True
+    last_printed_tip = ""
     for state_key in state_keys:
         action_string = actions_dict.get(state_key)
         if action_string:
@@ -277,6 +286,14 @@ if __name__ == "__main__":
             if lines:
                 if not first_print:
                     print("----")
+                    
+                tip_key = state_key_tips.get(state_key, "")
+                if tip_key and tip_key != last_printed_tip:
+                    translated_tip = multitext_dict.get(tip_key, tip_key)
+                    if translated_tip.strip():
+                        print(f";{translated_tip}")
+                    last_printed_tip = tip_key
+                    
                 for line in lines:
                     print(line)
                 first_print = False
