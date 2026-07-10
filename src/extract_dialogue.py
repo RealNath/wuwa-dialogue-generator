@@ -14,6 +14,9 @@ def format_dialogue(character_name: str, dialogue: str, prefix: str = "_", multi
         line = f"'''{character_name}:''' {dialogue}"
         line = line.replace("{PlayerName}", "{{Rover}}")
     
+    # Replace <b>X</b> with '''X'''
+    line = re.sub(r'<b>(.*?)</b>', r"'''\1'''", line)
+
     # Replace {Male=X;Female=Y} with {{MC|m=X|f=Y}}
     line = re.sub(r'\{Male=(.*?);Female=(.*?)\}', r'{{MC|m=\1|f=\2}}', line)
 
