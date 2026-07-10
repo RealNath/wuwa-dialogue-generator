@@ -3,7 +3,10 @@ import json
 import re
 from typing import List
 
-def format_dialogue(character_name: str, dialogue: str, prefix: str = "_") -> str:
+def format_dialogue(character_name: str, dialogue: str, prefix: str = "_", multitext_dict: dict = None) -> str:
+    if multitext_dict is None:
+        multitext_dict = {}
+        
     if prefix == "dicon":
         dicon = "{{DIcon}}"
         line = f"{dicon} {dialogue}"
@@ -16,6 +19,16 @@ def format_dialogue(character_name: str, dialogue: str, prefix: str = "_") -> st
 
     # Replace <ano=Y>X</ano> with {{Rubi|X|Y}}
     line = re.sub(r'<ano=(.*?)>(.*?)</ano>', r'{{Rubi|\2|\1}}', line)
+    
+    # Replace <te href=(number)>X</te> with {{Extra Effect|Text|Title|Description}}
+    def replace_te(match):
+        term_id = match.group(1)
+        text = match.group(2)
+        title = multitext_dict.get(f"Term{term_id}_Title", "")
+        desc = multitext_dict.get(f"Term{term_id}_Desc", "")
+        return f"{{{{Extra Effect|{text}|{title}|{desc}}}}}"
+        
+    line = re.sub(r'<te href=(\d+)>(.*?)</te>', replace_te, line)
     
     return line
 
@@ -130,7 +143,7 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     character_name = multitext_dict.get(f"Speaker_{who_id}_Name", who_id)
                     dialogue = multitext_dict.get(tid_talk, tid_talk)
                     
-                    formatted_dialogue = format_dialogue(character_name, dialogue)
+                    formatted_dialogue = format_dialogue(character_name, dialogue, multitext_dict=multitext_dict)
                     dialogue_line = f"{indent}{formatted_dialogue}"
                     output_lines.append(dialogue_line)
                     
@@ -169,7 +182,7 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                             opt_tid = opt.get("TidTalkOption")
                             if opt_tid:
                                 translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                                dialogue_line = format_dialogue("_", translated_opt, "dicon")
+                                dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict)
                                 output_lines.append(f"{indent}{dialogue_line}")
             
             if has_branching_options:
@@ -179,7 +192,7 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     opt_tid = opt.get("TidTalkOption")
                     if opt_tid:
                         translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                        dialogue_line = format_dialogue("_", translated_opt, "dicon")
+                        dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict)
                         output_lines.append(f"{indent}{dialogue_line}")
                         
                     if branch_seq_idx is not None:
