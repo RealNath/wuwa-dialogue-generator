@@ -51,7 +51,7 @@ def parse_json_string(json_string: str) -> list:
     parsed_data = json.loads(json_string)
     
     with open("test.json", "w", encoding="utf-8") as f:
-        # We must dump the parsed_data (the list/dict), NOT the action_string!
+        # Dump the parsed_data (list/dict)
         json.dump(parsed_data, f, ensure_ascii=False, indent=4)
     
     return parsed_data
@@ -67,8 +67,14 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
     
     for idx, show_talk in enumerate(show_talks):
         params = show_talk.get("Params", {})
-        talk_items = {item["Id"]: item for item in params.get("TalkItems", [])}
+        talk_items_list = params.get("TalkItems", [])
+        talk_items = {item["Id"]: item for item in talk_items_list}
         talk_sequence = params.get("TalkSequence", [])
+        
+        # If a quest doesn't have TalkSequence
+        if not talk_sequence and talk_items_list:
+            talk_sequence = [[item["Id"] for item in talk_items_list]]
+            
         seq_transitions = params.get("SequenceTransitions", {})
         
         talk_id_to_seq_idx = {}
