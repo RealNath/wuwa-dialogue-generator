@@ -5,6 +5,7 @@ import urllib.request
 import json
 import concurrent.futures
 import argparse
+from pathlib import Path
 
 def get_latest_version(url: str = "https://api.github.com/repos/Arikatsu/WutheringWaves_Data"):
     with request.urlopen(url) as res:
@@ -14,7 +15,7 @@ def get_latest_version(url: str = "https://api.github.com/repos/Arikatsu/Wutheri
 def download_file(file_info: tuple):
     url, filename = file_info
     print(f"Downloading {filename}...")
-    request.urlretrieve(url, filename)
+    request.urlretrieve(url, data_dir / filename)
     print(f"Finished downloading {filename}")
 
 if __name__ == "__main__":
@@ -29,14 +30,19 @@ if __name__ == "__main__":
     flow = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/BinData/flow/flow.json"
     flowstate = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/BinData/flowState/flowstate.json"
     plot_handbook = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/BinData/PlotHandBook/plothandbookconfig.json"
+    quest_node_data = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/BinData/QuestNodeData/questnodedata.json"
     multi_text = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/Textmaps/{lang}/multi_text/MultiText.json"
     multi_text_1sthalf = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/Textmaps/{lang}/multi_text_1sthalf/MultiText.json"
     multi_text_2ndhalf = f"https://raw.githubusercontent.com/Arikatsu/WutheringWaves_Data/{ver}/Textmaps/{lang}/multi_text_2ndhalf/MultiText.json"
+
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    data_dir.mkdir(exist_ok=True)
 
     files = {
         "flow": (flow, "flow.json"),
         "flowstate": (flowstate, "flowstate.json"),
         "plot_handbook": (plot_handbook, "plothandbookconfig.json"),
+        "quest_node_data": (quest_node_data, "questnodedata.json"),
         "multi_text": (multi_text, "MultiText.json"),
         "multi_text_1sthalf": (multi_text_1sthalf, "MultiText_1.json"),
         "multi_text_2ndhalf": (multi_text_2ndhalf, "MultiText_2.json"),
