@@ -1,3 +1,6 @@
+import sys
+import os
+import argparse
 from json import encoder
 import json
 import re
@@ -224,21 +227,104 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
         
     return output_lines
 
-if __name__ == "__main__":
-    import sys
-    import argparse
+def get_node_sequence(quest_id: int, questnodedata_path: str):
+    with open(questnodedata_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    nodes = {}
+    for item in data:
+        key = item.get("Key", "")
+        if key.startswith(f"{quest_id}_"):
+            node_data = item.get("Data", {})
+            node_id = node_data.get("Id")
+            if node_id is not None:
+                nodes[node_id] = node_data
+                
+    if not nodes:
+        return [], {}
 
+    # Find root node(s)
+    root_nodes = [n for n in nodes.values() if n.get("ParentNodeId") == 0]
+    if not root_nodes:
+        # Fallback: find nodes whose parent doesn't exist in this quest's nodes
+        root_nodes = [n for n in nodes.values() if n.get("ParentNodeId") not in nodes]
+
+    children_map = {}
+    for node_id, node in nodes.items():
+        parent_id = node.get("ParentNodeId")
+        if parent_id not in children_map:
+            children_map[parent_id] = []
+        children_map[parent_id].append(node_id)
+        
+    state_keys = []
+    state_key_tips = {}
+    visited = set()
+    
+    def extract_play_flow_states(obj, current_tip):
+        if isinstance(obj, dict):
+            # Check if this dict represents a flow state
+            flow_list = obj.get("FlowListName")
+            flow_id = obj.get("FlowId")
+            state_id = obj.get("StateId")
+            if flow_list and flow_id is not None and state_id is not None:
+                state_key = f"{flow_list}_{flow_id}_{state_id}"
+                if state_key not in state_keys:
+                    state_keys.append(state_key)
+                    state_key_tips[state_key] = current_tip
+            
+            # Recursively check values
+            for value in obj.values():
+                extract_play_flow_states(value, current_tip)
+        elif isinstance(obj, list):
+            for item in obj:
+                extract_play_flow_states(item, current_tip)
+
+    def traverse(node_id, current_tip):
+        if node_id in visited:
+            return
+        visited.add(node_id)
+        
+        node = nodes.get(node_id)
+        if not node:
+            return
+            
+        tid_tip = node.get("TidTip", "")
+        if tid_tip:
+            current_tip = tid_tip
+            
+        extract_play_flow_states(node, current_tip)
+        
+        for child_id in children_map.get(node_id, []):
+            traverse(child_id, current_tip)
+
+    for root in root_nodes:
+        traverse(root.get("Id"), "")
+
+    return state_keys, state_key_tips
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract dialogues for a given QuestId")
     parser.add_argument("quest_id", type=int, help="QuestId to extract dialogues for")
     args = parser.parse_args()
 
-    with open("plothandbookconfig.json", "r", encoding="utf-8") as f:
-        plothb_data = json.load(f)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(script_dir)
+    plothb_path = os.path.join(base_dir, "BinData", "PlotHandBook", "plothandbookconfig.json")
+    if not os.path.exists(plothb_path):
+        plothb_path = "plothandbookconfig.json"
+
+    try:
+        with open(plothb_path, "r", encoding="utf-8") as f:
+            plothb_data = json.load(f)
+    except FileNotFoundError:
+        print(f"plothandbookconfig.json not found in {plothb_path}.")
+        sys.exit(1)
         
     multitext_dict = {}
     for filename in ["MultiText.json", "MultiText_1.json", "MultiText_2.json"]:
+        filepath = os.path.join(script_dir, filename) if os.path.exists(os.path.join(script_dir, filename)) else filename
         try:
-            with open(filename, "r", encoding="utf-8") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for item in data:
                     if item.get("Id"):
@@ -246,7 +332,7 @@ if __name__ == "__main__":
                             continue
                         multitext_dict[item.get("Id")] = item.get("Content")
         except FileNotFoundError:
-            print(f"Please download and put {filename} to current directory")
+            print(f"Please download and put {filename} to appropriate directory")
             sys.exit(1)
         
     quest_data_str = None
@@ -255,41 +341,55 @@ if __name__ == "__main__":
             quest_data_str = item.get("Data")
             break
             
-    if not quest_data_str:
-        print(f"QuestId {args.quest_id} not found in plothandbookconfig.json")
-        sys.exit(1)
-        
-    parsed_data = parse_json_string(quest_data_str)
-    
     state_keys = []
     state_key_tips = {}
     current_tip = ""
     
-    for item in parsed_data:
-        tid_tip = item.get("TidTip", "")
-        if tid_tip:
-            current_tip = tid_tip
+    if quest_data_str:
+        parsed_data = parse_json_string(quest_data_str)
+        for item in parsed_data:
+            tid_tip = item.get("TidTip", "")
+            if tid_tip:
+                current_tip = tid_tip
+                
+            flow = item.get("Flow", {})
+            flow_list_name = flow.get("FlowListName", "")
+            flow_id = flow.get("FlowId", 0)
+            state_id = flow.get("StateId", 0)
             
-        flow = item.get("Flow", {})
-        flow_list_name = flow.get("FlowListName", "")
-        flow_id = flow.get("FlowId", 0)
-        state_id = flow.get("StateId", 0)
-        
-        if not flow_list_name:
-            continue
+            if not flow_list_name:
+                continue
+                
+            state_key = f"{flow_list_name}_{flow_id}_{state_id}"
+            state_keys.append(state_key)
+            state_key_tips[state_key] = current_tip
+    else:
+        print(f"QuestId {args.quest_id} not found in plothandbookconfig. Falling back to questnodedata.json...")
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(script_dir)
+        questnodedata_path = os.path.join(base_dir, "BinData", "QuestNodeData", "questnodedata.json")
+        if not os.path.exists(questnodedata_path):
+            questnodedata_path = "questnodedata.json"
             
-        state_key = f"{flow_list_name}_{flow_id}_{state_id}"
-        state_keys.append(state_key)
-        state_key_tips[state_key] = current_tip
+        try:
+            state_keys, state_key_tips = get_node_sequence(args.quest_id, questnodedata_path)
+        except FileNotFoundError:
+            print(f"{questnodedata_path} not found.")
+            sys.exit(1)
         
     if not state_keys:
         print(f"No valid state keys found for QuestId {args.quest_id}.")
         sys.exit(0)
         
+    flowstate_path = os.path.join(base_dir, "BinData", "flowState", "flowstate.json")
+    if not os.path.exists(flowstate_path):
+        flowstate_path = "flowstate.json"
+        
     try:
-        actions_dict = get_actions_for_state_keys("flowstate.json", state_keys)
+        actions_dict = get_actions_for_state_keys(flowstate_path, state_keys)
     except FileNotFoundError:
-        print("flowstate.json not found.")
+        print(f"{flowstate_path} not found.")
         sys.exit(1)
         
     first_print = True
