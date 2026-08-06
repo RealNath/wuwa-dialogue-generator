@@ -15,17 +15,35 @@ def get_states_for_id(target_id: str) -> List[str]:
             
     return []
 
-def get_actions_for_state_keys(state_keys: List[str]) -> dict:
+def get_actions_and_missing_keys(state_keys: List[str]) -> tuple:
     data = load_flowstate(get_base_dir())
     state_keys_set = set(state_keys)
+    
+    flow_list_names = set()
+    for sk in state_keys:
+        parts = sk.split('_')
+        if len(parts) >= 3:
+            flow_list_name = '_'.join(parts[:-2])
+            flow_list_names.add(flow_list_name)
+            
     result = {}
+    missing_keys = []
     
     for item in data:
         state_key = item.get("StateKey")
+        if not state_key:
+            continue
+            
         if state_key in state_keys_set:
             result[state_key] = item.get("Actions")
-            
-    return result
+        else:
+            for fln in flow_list_names:
+                if state_key.startswith(f"{fln}_"):
+                    missing_keys.append(state_key)
+                    result[state_key] = item.get("Actions")
+                    break
+                    
+    return result, missing_keys
 
 def parse_json_string(json_string: str) -> list:
     if not json_string:
