@@ -32,9 +32,10 @@ if __name__ == "__main__":
 
     actions_dict, missing_keys = get_actions_and_missing_keys(state_keys)
     
-    if args.show_missing_keys:
-        for mk in missing_keys:
-            state_keys.append(mk)
-            state_key_tips[mk] = "(Missing from Quest Nodes)"
-        
     print_dialogues(state_keys, state_key_tips, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
+
+    if args.show_missing_keys and missing_keys:
+        print("\n" + "="*50)
+        print("MISSING FROM EXTRACTED DATA")
+        print("="*50)
+        print_dialogues(missing_keys, {}, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
