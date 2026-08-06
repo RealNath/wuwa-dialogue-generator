@@ -2,6 +2,8 @@
 
 This is a program that helps you automatically generate the dialogue transcriptions of each Wuthering Waves quests. Do note that this may not include a few stuffs like WavesLine chats, dialogues during the regular walking/fighting, some NPC convo (the ones without custom camera movement), as that's missing in the flowstate. But it should do 85%+ of the job.
 
+(**Note**: try enabling `--show-missing-keys` to get a much more complete result. Do note the orders may be incorrect.)
+
 This is made especially for Wuthering Waves Fandom Wiki, but anyone else are welcomed to use it.
 
 ## How to use

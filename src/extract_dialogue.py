@@ -1,7 +1,7 @@
 import sys
 import argparse
 from pathlib import Path
-from utils import get_actions_and_missing_keys
+from utils import get_actions_and_missing_keys, interleave_missing_keys
 from flow_parser import get_node_sequence
 from data_loader import load_plothandbookconfig, load_multitext
 from quest_processor import get_quest_state_keys
@@ -32,10 +32,16 @@ if __name__ == "__main__":
 
     actions_dict, missing_keys = get_actions_and_missing_keys(state_keys)
     
-    print_dialogues(state_keys, state_key_tips, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
+    if args.show_missing_keys:
+        final_keys, unplaced_keys = interleave_missing_keys(state_keys, missing_keys)
+    else:
+        final_keys = state_keys
+        unplaced_keys = []
+    
+    print_dialogues(final_keys, state_key_tips, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
 
-    if args.show_missing_keys and missing_keys:
+    if args.show_missing_keys and unplaced_keys:
         print("\n" + "="*50)
         print("MISSING FROM EXTRACTED DATA")
         print("="*50)
-        print_dialogues(missing_keys, {}, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
+        print_dialogues(unplaced_keys, {}, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)

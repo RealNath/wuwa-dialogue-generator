@@ -1,18 +1,30 @@
 import re
 
-def format_dialogue(character_name: str, dialogue: str, prefix: str = "_", multitext_dict: dict = None) -> str:
+def format_dialogue(character_name: str, dialogue: str, prefix: str = "_", multitext_dict: dict = None, is_phone: bool = False) -> str:
     if multitext_dict is None:
         multitext_dict = {}
         
+    # Remove internal game tags from speaker names
+    character_name = character_name.replace("{message} ", "")
+    character_name = character_name.replace("{message}", "")
+    
     if prefix == "dicon":
-        dicon = "{{DIcon}}"
+        dicon = "{Choice}" if is_phone else "{{DIcon}}"
         line = f"{dicon} {dialogue}"
     elif prefix == "center":
         line = f"'''{dialogue}'''"
         line = line.replace("{PlayerName}", "{{Rover}}")
     else:
-        line = f"'''{character_name}:''' {dialogue}"
-        line = line.replace("{PlayerName}", "{{Rover}}")
+        if is_phone:
+            speaker = character_name.replace("{PlayerName}", "(Rover)")
+            dialogue = dialogue.replace("{PlayerName}", "{{Rover}}")
+            if not speaker:
+                line = f":{dialogue}"
+            else:
+                line = f"'''{speaker}:''' {dialogue}"
+        else:
+            line = f"'''{character_name}:''' {dialogue}"
+            line = line.replace("{PlayerName}", "{{Rover}}")
     
     # Replace <b>X</b> with '''X'''
     line = re.sub(r'<b>(.*?)</b>', r"'''\1'''", line)

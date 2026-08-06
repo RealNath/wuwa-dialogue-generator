@@ -13,11 +13,19 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
     if not show_talks:
         return []
         
+    phone_mode = any(
+        action.get("Name") == "SetPlotMode"
+        and action.get("Params", {}).get("Mode") == "PhoneMessage"
+        for action in parsed_data
+    )
+        
     output_lines = []
     
     for idx, show_talk in enumerate(show_talks):
         params = show_talk.get("Params", {})
         talk_items_list = params.get("TalkItems", [])
+        is_phone = phone_mode or any(item.get("Type") == "PhoneMessage" for item in talk_items_list)
+        talk_output = []
         talk_items = {item["Id"]: item for item in talk_items_list}
         talk_sequence = params.get("TalkSequence", [])
         
@@ -132,9 +140,9 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     dialogue = multitext_dict.get(tid_talk, tid_talk)
                     
                     prefix = "center" if item_type == "CenterText" else "_"
-                    formatted_dialogue = format_dialogue(character_name, dialogue, prefix=prefix, multitext_dict=multitext_dict)
+                    formatted_dialogue = format_dialogue(character_name, dialogue, prefix=prefix, multitext_dict=multitext_dict, is_phone=is_phone)
                     dialogue_line = f"{indent}{formatted_dialogue}"
-                    output_lines.append(dialogue_line)
+                    talk_output.append(dialogue_line)
                     
                 if item.get("Options"):
                     options = item.get("Options")
@@ -171,8 +179,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                             opt_tid = opt.get("TidTalkOption")
                             if opt_tid:
                                 translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                                dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict)
-                                output_lines.append(f"{indent}{dialogue_line}")
+                                dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict, is_phone=is_phone)
+                                talk_output.append(f"{indent}{dialogue_line}")
             
             if has_branching_options:
                 next_seqs = set()
@@ -181,8 +189,8 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     opt_tid = opt.get("TidTalkOption")
                     if opt_tid:
                         translated_opt = multitext_dict.get(opt_tid, opt_tid)
-                        dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict)
-                        output_lines.append(f"{indent}{dialogue_line}")
+                        dialogue_line = format_dialogue("_", translated_opt, "dicon", multitext_dict, is_phone=is_phone)
+                        talk_output.append(f"{indent}{dialogue_line}")
                         
                     if branch_seq_idx is not None:
                         n_seq = get_next_seq_from_branch(branch_seq_idx)
@@ -207,6 +215,12 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                     traverse(seq_idx + 1, indent_level, stop_seqs)
 
         traverse(0, 1, set())
+        
+        if is_phone and talk_output:
+            talk_output[0] = "{{WavesLine|text = " + talk_output[0].lstrip()
+            talk_output[-1] = talk_output[-1] + "}}"
+            
+        output_lines.extend(talk_output)
         
     return output_lines
 

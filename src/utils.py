@@ -45,6 +45,59 @@ def get_actions_and_missing_keys(state_keys: List[str]) -> tuple:
                     
     return result, missing_keys
 
+# insert missing StateKeys and sort
+def interleave_missing_keys(state_keys: List[str], missing_state_keys: List[str]) -> tuple:
+    state_keys_list = list(state_keys)
+    unplaced_keys = []
+    
+    for mk in missing_state_keys:
+        # divide missing StateKeys into FlowListName, FlowId, StateId
+        parts = mk.split('_')
+        if len(parts) < 3:
+            unplaced_keys.append(mk)
+            continue
+            
+        try:
+            m_state_id = int(parts[-1])
+            m_flow_id = parts[-2]
+            m_flow_list_name = '_'.join(parts[:-2])
+        except ValueError:
+            unplaced_keys.append(mk)
+            continue
+        
+        best_idx = len(state_keys_list)
+        found_spot = False
+        
+        for i, sk in enumerate(state_keys_list):
+            # divide available StateKeys into FlowListName, FlowId, StateId
+            s_parts = sk.split('_')
+            if len(s_parts) < 3:
+                continue
+            
+            try:
+                s_state_id = int(s_parts[-1])
+                s_flow_id = s_parts[-2]
+                s_flow_list_name = '_'.join(s_parts[:-2])
+            except ValueError:
+                continue
+                
+            # if available key and missing key belong to same sub-chapter
+            # sort (insert) based on StateId
+            if s_flow_list_name == m_flow_list_name and s_flow_id == m_flow_id:
+                found_spot = True
+                if s_state_id > m_state_id:
+                    best_idx = i
+                    break
+                else:
+                    best_idx = i + 1
+                    
+        if found_spot:
+            state_keys_list.insert(best_idx, mk)
+        else:
+            unplaced_keys.append(mk)
+        
+    return state_keys_list, unplaced_keys
+
 def parse_json_string(json_string: str) -> list:
     if not json_string:
         return []
