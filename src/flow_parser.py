@@ -126,11 +126,13 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                 
                 tid_talk = item.get("TidTalk")
                 who_id = item.get("WhoId")
+                item_type = item.get("Type")
                 if tid_talk:
-                    character_name = multitext_dict.get(f"Speaker_{who_id}_Name", who_id)
+                    character_name = multitext_dict.get(f"Speaker_{who_id}_Name", who_id) if who_id else ""
                     dialogue = multitext_dict.get(tid_talk, tid_talk)
                     
-                    formatted_dialogue = format_dialogue(character_name, dialogue, multitext_dict=multitext_dict)
+                    prefix = "center" if item_type == "CenterText" else "_"
+                    formatted_dialogue = format_dialogue(character_name, dialogue, prefix=prefix, multitext_dict=multitext_dict)
                     dialogue_line = f"{indent}{formatted_dialogue}"
                     output_lines.append(dialogue_line)
                     

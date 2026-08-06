@@ -7,6 +7,9 @@ def format_dialogue(character_name: str, dialogue: str, prefix: str = "_", multi
     if prefix == "dicon":
         dicon = "{{DIcon}}"
         line = f"{dicon} {dialogue}"
+    elif prefix == "center":
+        line = f"'''{dialogue}'''"
+        line = line.replace("{PlayerName}", "{{Rover}}")
     else:
         line = f"'''{character_name}:''' {dialogue}"
         line = line.replace("{PlayerName}", "{{Rover}}")
