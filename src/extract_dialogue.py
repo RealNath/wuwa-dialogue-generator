@@ -10,6 +10,7 @@ from dialogue_printer import print_dialogues
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract dialogues for a given QuestId")
     parser.add_argument("quest_id", type=int, help="QuestId to extract dialogues for")
+    parser.add_argument("--show-state-keys", action="store_true", help="Show the StateKey of each part of the dialogue")
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -30,4 +31,4 @@ if __name__ == "__main__":
 
     actions_dict = get_actions_for_state_keys(state_keys)
         
-    print_dialogues(state_keys, state_key_tips, actions_dict, multitext_dict)
+    print_dialogues(state_keys, state_key_tips, actions_dict, multitext_dict, show_state_keys=args.show_state_keys)
