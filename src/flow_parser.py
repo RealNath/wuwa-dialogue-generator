@@ -23,7 +23,44 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
         
         # If a quest doesn't have TalkSequence
         if not talk_sequence and talk_items_list:
-            talk_sequence = [[item["Id"] for item in talk_items_list]]
+            entry_points = {talk_items_list[0]["Id"]}
+            for item in talk_items_list:
+                for opt in item.get("Options", []):
+                    for action in opt.get("Actions", []):
+                        if action.get("Name") == "JumpTalk":
+                            t_id = action.get("Params", {}).get("TalkId")
+                            if t_id is not None:
+                                entry_points.add(t_id)
+                for action in item.get("Actions", []):
+                    if action.get("Name") == "JumpTalk":
+                        t_id = action.get("Params", {}).get("TalkId")
+                        if t_id is not None:
+                            entry_points.add(t_id)
+
+            built_sequences = []
+            current_seq = []
+            for item in talk_items_list:
+                item_id = item["Id"]
+                if item_id in entry_points and current_seq:
+                    built_sequences.append(current_seq)
+                    current_seq = []
+                
+                current_seq.append(item_id)
+                ends_sequence = False
+                if item.get("Options"):
+                    ends_sequence = True
+                else:
+                    for action in item.get("Actions", []):
+                        if action.get("Name") in ("JumpTalk", "FinishTalk"):
+                            ends_sequence = True
+                
+                if ends_sequence:
+                    built_sequences.append(current_seq)
+                    current_seq = []
+                    
+            if current_seq:
+                built_sequences.append(current_seq)
+            talk_sequence = built_sequences
             
         seq_transitions = params.get("SequenceTransitions", {})
         
@@ -45,7 +82,7 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                 if not trans.get("OptionTextKey"):
                     return trans.get("NextSequenceIndex")
                     
-            # Check last item for JumpTalk
+            # Check last item for JumpTalk or FinishTalk
             if b_seq:
                 last_item = talk_items.get(b_seq[-1])
                 if last_item:
@@ -53,6 +90,19 @@ def get_talk_flow_lines(parsed_data: list, multitext_dict: dict = None) -> list:
                         if action.get("Name") == "JumpTalk":
                             target_talk_id = action.get("Params", {}).get("TalkId")
                             return talk_id_to_seq_idx.get(target_talk_id)
+                        elif action.get("Name") == "FinishTalk":
+                            return None
+                            
+                    options = last_item.get("Options", [])
+                    if len(options) == 1:
+                        for action in options[0].get("Actions", []):
+                            if action.get("Name") == "JumpTalk":
+                                target_talk_id = action.get("Params", {}).get("TalkId")
+                                return talk_id_to_seq_idx.get(target_talk_id)
+                            elif action.get("Name") == "FinishTalk":
+                                return None
+                    elif len(options) > 1:
+                        return None
             
             # Linear fallback
             return b_seq_idx + 1
